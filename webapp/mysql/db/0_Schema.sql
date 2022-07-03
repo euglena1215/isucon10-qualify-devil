@@ -17,8 +17,8 @@ CREATE TABLE isuumo.estate
     door_height INTEGER             NOT NULL,
     door_width  INTEGER             NOT NULL,
     features    VARCHAR(64)         NOT NULL,
-    popularity  INTEGER             NOT NULL
-    INDEX (popularity, rent)
+    popularity  INTEGER             NOT NULL,
+    INDEX (door_width, door_width, rent)
 );
 
 CREATE TABLE isuumo.chair
