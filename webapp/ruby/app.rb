@@ -147,6 +147,15 @@ class App < Sinatra::Base
       end
     end
 
+    %w[0_Schema.sql 1_DummyEstateData.sql 2_DummyChairData.sql].each do |sql|
+      sql_path = sql_dir.join(sql)
+      cmd = ['mysql', '-h', chair_db_info[:host], '-u', chair_db_info[:username], "-p#{db_info[:password]}", '-P', chair_db_info[:port], chair_db_info[:database]]
+      IO.popen(cmd, 'w') do |io|
+        io.puts File.read(sql_path)
+        io.close
+      end
+    end
+
     sql = "UPDATE chair SET price_range_id = 0 WHERE price > 3000"
     chair_db.xquery(sql)
     sql = "UPDATE chair SET price_range_id = 1 WHERE price BETWEEN 3000 AND 6000"
