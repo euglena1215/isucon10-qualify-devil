@@ -284,7 +284,7 @@ class App < Sinatra::Base
     transaction('post_api_chair') do
       CSV.parse(params[:chairs][:tempfile].read, skip_blanks: true) do |row|
         sql = 'INSERT INTO chair(id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock, popularity_desc) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        db.xquery(sql, *row.map(&:to_s), -1 * row[:popularity].to_i)
+        db.xquery(sql, *row.map(&:to_s))
       end
     end
 
