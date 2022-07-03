@@ -458,14 +458,13 @@ class App < Sinatra::Base
       e = db.xquery(sql, estate[:id]).first
       if e
         estates_in_polygon << e
+        break if estates_in_polygon.size >= NAZOTTE_LIMIT
       end
     end
 
-    # append のタイミングで NAZOTTE_LIMIT を超えたら処理を止める、などはできそう
-    nazotte_estates = estates_in_polygon.take(NAZOTTE_LIMIT)
     {
-      estates: nazotte_estates.map { |e| camelize_keys_for_estate(e) },
-      count: nazotte_estates.size,
+      estates: estates_in_polygon.map { |e| camelize_keys_for_estate(e) },
+      count: estates_in_polygon.size,
     }.to_json
   end
 
