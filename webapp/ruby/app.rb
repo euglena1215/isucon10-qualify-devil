@@ -55,11 +55,11 @@ class App < Sinatra::Base
 
     def chair_db
       Thread.current[:db] ||= Mysql2::Client.new(
-        host: db_info[:host],
-        port: db_info[:port],
-        username: db_info[:username],
-        password: db_info[:password],
-        database: db_info[:database],
+        host: chair_db_info[:host],
+        port: chair_db_info[:port],
+        username: chair_db_info[:username],
+        password: chair_db_info[:password],
+        database: chair_db_info[:database],
         reconnect: true,
         symbolize_keys: true,
       )
