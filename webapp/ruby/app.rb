@@ -498,8 +498,10 @@ class App < Sinatra::Base
     # バルクインサートできるかも
     transaction('post_api_estate') do
       CSV.parse(params[:estates][:tempfile].read, skip_blanks: true) do |row|
+        row[:popularity_desc] = -1 * row[:popularity].to_i
+
         sql = 'INSERT INTO estate(id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity, popularity_desc) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        db.xquery(sql, *row.map(&:to_s), -1 * row[:popularity].to_i)
+        db.xquery(sql, *row.map(&:to_s))
       end
     end
 
