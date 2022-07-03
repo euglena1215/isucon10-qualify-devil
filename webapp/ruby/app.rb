@@ -115,7 +115,7 @@ class App < Sinatra::Base
   end
 
   get '/api/chair/low_priced' do
-    sql = "SELECT * FROM chair WHERE stock > 0 ORDER BY price ASC, id ASC LIMIT #{LIMIT}" # XXX:
+    sql = "SELECT * FROM chair WHERE stock > 0 ORDER BY price ASC LIMIT #{LIMIT}" # XXX:
     chairs = db.query(sql).to_a
     { chairs: chairs }.to_json
   end
@@ -238,7 +238,7 @@ class App < Sinatra::Base
 
     sqlprefix = 'SELECT * FROM chair WHERE '
     search_condition = search_queries.join(' AND ')
-    limit_offset = " ORDER BY popularity DESC, id ASC LIMIT #{per_page} OFFSET #{per_page * page}" # XXX: mysql-cs-bind doesn't support escaping variables for limit and offset
+    limit_offset = " ORDER BY popularity DESC LIMIT #{per_page} OFFSET #{per_page * page}" # XXX: mysql-cs-bind doesn't support escaping variables for limit and offset
     count_prefix = 'SELECT COUNT(*) as count FROM chair WHERE '
 
     count = db.xquery("#{count_prefix}#{search_condition}", query_params).first[:count]
