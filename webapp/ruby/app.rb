@@ -498,6 +498,7 @@ class App < Sinatra::Base
     # バルクインサートできるかも
     transaction('post_api_estate') do
       CSV.parse(params[:estates][:tempfile].read, skip_blanks: true) do |row|
+        puts row
         row[:popularity_desc] = -1 * row[:popularity].to_s.to_i
 
         sql = 'INSERT INTO estate(id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity, popularity_desc) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
