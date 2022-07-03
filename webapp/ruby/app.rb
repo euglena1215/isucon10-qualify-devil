@@ -4,8 +4,8 @@ require 'mysql2-cs-bind'
 require 'csv'
 
 class App < Sinatra::Base
-  LIMIT = 20
-  NAZOTTE_LIMIT = 50
+  LIMIT = 50
+  NAZOTTE_LIMIT = 100
   CHAIR_SEARCH_CONDITION = JSON.parse(File.read('../fixture/chair_condition.json'), symbolize_names: true)
   ESTATE_SEARCH_CONDITION = JSON.parse(File.read('../fixture/estate_condition.json'), symbolize_names: true)
 
