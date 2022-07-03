@@ -262,6 +262,7 @@ class App < Sinatra::Base
       halt 404
     end
 
+    # stock はクエリに含めたらよさそう
     if chair[:stock] <= 0
       logger.info "Requested id's chair is sold out: #{id}"
       halt 404
@@ -276,6 +277,7 @@ class App < Sinatra::Base
       halt 400
     end
 
+    # バルクインサートできそう
     transaction('post_api_chair') do
       CSV.parse(params[:chairs][:tempfile].read, skip_blanks: true) do |row|
         sql = 'INSERT INTO chair(id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
@@ -459,6 +461,7 @@ class App < Sinatra::Base
       end
     end
 
+    # append のタイミングで NAZOTTE_LIMIT を超えたら処理を止める、などはできそう
     nazotte_estates = estates_in_polygon.take(NAZOTTE_LIMIT)
     {
       estates: nazotte_estates.map { |e| camelize_keys_for_estate(e) },
@@ -490,6 +493,7 @@ class App < Sinatra::Base
       halt 400
     end
 
+    # バルクインサートできるかも
     transaction('post_api_estate') do
       CSV.parse(params[:estates][:tempfile].read, skip_blanks: true) do |row|
         sql = 'INSERT INTO estate(id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
