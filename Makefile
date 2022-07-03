@@ -30,7 +30,7 @@ log_reset: ## logファイルを初期化する
 
 .PHONY: alp
 alp: ## alpのログを見る
-	@sudo cat $(NGINX_LOG) |  alp json --sort sum -r -m '/api/chair/low_priced,api/chair/search,/api/chair/:id,/api/chair,/api/chair/buy/\d+,/api/chair/search/condition,/api/estate/search,/api/estate/\+,/api/estate/req_doc/\d+,/api/estate/\d+,/api/recommended_estate/\d+, /images/estate/.*.png, /images/chair/.*.png, /_next/static/.*'
+	@sudo cat $(NGINX_LOG) |  alp json --format=markdown --sort sum -r -m '/api/chair/low_priced,api/chair/search,/api/chair/:id,/api/chair,/api/chair/buy/\d+,/api/chair/search/condition,/api/estate/search,/api/estate/\+,/api/estate/req_doc/\d+,/api/estate/\d+,/api/recommended_estate/\d+, /images/estate/.*.png, /images/chair/.*.png, /_next/static/.*'
 
 .PHONY: slow
 slow: ## スロークエリを見る
@@ -66,7 +66,7 @@ application_build: ## application build (wip)
 
 .PHONY: application_restart
 application_restart: ## application restart (wip)
-	@echo "Please implement!!"
+	sudo systemctl restart isuumo.ruby.service
 
 .PHONY: middleware_restart
 middleware_restart: ## mysqlとnginxのrestart
@@ -77,4 +77,4 @@ middleware_restart: ## mysqlとnginxのrestart
 restart: application_restart middleware_restart ## application, mysql, nginxのリスタート
 
 .PHONY: bench
-bench: log_reset application_build restart slow_on ## bench回す前に実行するコマンド(これで全ての前処理が完了する状態を作る)
+bench: log_reset restart slow_on ## bench回す前に実行するコマンド(これで全ての前処理が完了する状態を作る)
