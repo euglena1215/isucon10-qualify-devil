@@ -112,11 +112,7 @@ class App < Sinatra::Base
     end
 
 
-    sql = "SELECT * FROM estate"
-    estates = db.xquery(sql).to_a
-    estates.each do |e|
-      db.xquery('UPDATE estate SET popularity_desc = -1 * popularity WHERE id = ?', e[:id])
-    end
+    db.xquery('UPDATE estate SET popularity_desc = -1 * popularity')
 
     { language: 'ruby' }.to_json
   end
@@ -454,7 +450,7 @@ class App < Sinatra::Base
       },
     }
 
-    sql = 'SELECT * FROM estate WHERE latitude <= ? AND latitude >= ? AND longitude <= ? AND longitude >= ? ORDER BY popularity DESC, id ASC'
+    sql = 'SELECT * FROM estate WHERE latitude <= ? AND latitude >= ? AND longitude <= ? AND longitude >= ? ORDER BY popularity_desc , id ASC'
     estates = db.xquery(sql, bounding_box[:bottom_right][:latitude], bounding_box[:top_left][:latitude], bounding_box[:bottom_right][:longitude], bounding_box[:top_left][:longitude])
 
     estates_in_polygon = []
@@ -558,7 +554,7 @@ class App < Sinatra::Base
 
     a, b = [w, h, d].min(2) # 最小の2辺を取る
 
-    sql = "SELECT * FROM estate WHERE (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) ORDER BY popularity DESC LIMIT #{LIMIT}" # XXX:
+    sql = "SELECT * FROM estate WHERE (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) ORDER BY popularity_desc LIMIT #{LIMIT}" # XXX:
     estates = db.xquery(sql, a, b, b, a).to_a
 
     { estates: estates.map { |e| camelize_keys_for_estate(e) } }.to_json
