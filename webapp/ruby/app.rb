@@ -419,7 +419,7 @@ class App < Sinatra::Base
 
     sqlprefix = 'SELECT * FROM estate WHERE '
     search_condition = search_queries.join(' AND ')
-    limit_offset = " ORDER BY popularity DESC LIMIT #{per_page} OFFSET #{per_page * page}" # XXX:
+    limit_offset = " ORDER BY popularity_desc LIMIT #{per_page} OFFSET #{per_page * page}" # XXX:
     count_prefix = 'SELECT COUNT(*) as count FROM estate WHERE '
 
     count = db.xquery("#{count_prefix}#{search_condition}", query_params).first[:count]
