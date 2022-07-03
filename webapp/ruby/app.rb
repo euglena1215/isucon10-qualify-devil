@@ -552,7 +552,7 @@ class App < Sinatra::Base
 
     a, b = [w, h, d].min(2) # 最小の2辺を取る
 
-    sql = "SELECT * FROM estate WHERE (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) ORDER BY popularity DESC, id ASC LIMIT #{LIMIT}" # XXX:
+    sql = "SELECT * FROM estate WHERE (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) ORDER BY popularity DESC LIMIT #{LIMIT}" # XXX:
     estates = db.xquery(sql, a, b, b, a).to_a
 
     { estates: estates.map { |e| camelize_keys_for_estate(e) } }.to_json
