@@ -54,7 +54,7 @@ class App < Sinatra::Base
     end
 
     def chair_db
-      Thread.current[:db] ||= Mysql2::Client.new(
+      Thread.current[:chair_db] ||= Mysql2::Client.new(
         host: chair_db_info[:host],
         port: chair_db_info[:port],
         username: chair_db_info[:username],
