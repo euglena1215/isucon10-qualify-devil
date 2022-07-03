@@ -31,6 +31,16 @@ class App < Sinatra::Base
       }
     end
 
+    def chair_db_info
+      {
+        host: ENV.fetch('C_MYSQL_HOST', '127.0.0.1'),
+        port: ENV.fetch('MYSQL_PORT', '3306'),
+        username: ENV.fetch('MYSQL_USER', 'isucon'),
+        password: ENV.fetch('MYSQL_PASS', 'isucon'),
+        database: ENV.fetch('MYSQL_DBNAME', 'isuumo'),
+      }
+    end
+
     def db
       Thread.current[:db] ||= Mysql2::Client.new(
         host: db_info[:host],
@@ -43,37 +53,63 @@ class App < Sinatra::Base
       )
     end
 
-    def transaction(name)
-      begin_transaction(name)
-      yield(name)
-      commit_transaction(name)
-    rescue Exception => e
-      logger.error "Failed to commit tx: #{e.inspect}"
-      rollback_transaction(name)
-      raise
-    ensure
-      ensure_to_abort_transaction(name)
+    def chair_db
+      Thread.current[:db] ||= Mysql2::Client.new(
+        host: db_info[:host],
+        port: db_info[:port],
+        username: db_info[:username],
+        password: db_info[:password],
+        database: db_info[:database],
+        reconnect: true,
+        symbolize_keys: true,
+      )
     end
 
-    def begin_transaction(name)
+    def transaction(name)
+      d = db
+      begin_transaction(name, db)
+      yield(name)
+      commit_transaction(name, db)
+    rescue Exception => e
+      logger.error "Failed to commit tx: #{e.inspect}"
+      rollback_transaction(name, db)
+      raise
+    ensure
+      ensure_to_abort_transaction(name, db)
+    end
+
+    def chair_transaction(name)
+      d = chair_db
+      begin_transaction(name, db)
+      yield(name)
+      commit_transaction(name, db)
+    rescue Exception => e
+      logger.error "Failed to commit tx: #{e.inspect}"
+      rollback_transaction(name, db)
+      raise
+    ensure
+      ensure_to_abort_transaction(name, db)
+    end
+
+    def begin_transaction(name, db)
       Thread.current[:db_transaction] ||= {}
       db.query('BEGIN')
       Thread.current[:db_transaction][name] = :open
     end
 
-    def commit_transaction(name)
+    def commit_transaction(name, db)
       Thread.current[:db_transaction] ||= {}
       db.query('COMMIT')
       Thread.current[:db_transaction][name] = :nil
     end
 
-    def rollback_transaction(name)
+    def rollback_transaction(name, db)
       Thread.current[:db_transaction] ||= {}
       db.query('ROLLBACK')
       Thread.current[:db_transaction][name] = :nil
     end
 
-    def ensure_to_abort_transaction(name)
+    def ensure_to_abort_transaction(name, db)
       Thread.current[:db_transaction] ||= {}
       if in_transaction?(name)
         logger.warn "Transaction closed implicitly (#{$$}, #{Thread.current.object_id}): #{name}"
@@ -112,27 +148,27 @@ class App < Sinatra::Base
     end
 
     sql = "UPDATE chair SET price_range_id = 0 WHERE price > 3000"
-    db.xquery(sql)
+    chair_db.xquery(sql)
     sql = "UPDATE chair SET price_range_id = 1 WHERE price BETWEEN 3000 AND 6000"
-    db.xquery(sql)
+    chair_db.xquery(sql)
     sql = "UPDATE chair SET price_range_id = 2 WHERE price BETWEEN 6000 AND 9000"
-    db.xquery(sql)
+    chair_db.xquery(sql)
     sql = "UPDATE chair SET price_range_id = 3 WHERE price BETWEEN 9000 AND 12000"
-    db.xquery(sql)
+    chair_db.xquery(sql)
     sql = "UPDATE chair SET price_range_id = 4 WHERE price BETWEEN 12000 AND 15000"
-    db.xquery(sql)
+    chair_db.xquery(sql)
     sql = "UPDATE chair SET price_range_id = 5 WHERE price < 15000"
-    db.xquery(sql)
+    chair_db.xquery(sql)
 
     db.xquery('UPDATE estate SET popularity_desc = -1 * popularity')
-    db.xquery('UPDATE chair SET popularity_desc = -1 * popularity')
+    chair_db.xquery('UPDATE chair SET popularity_desc = -1 * popularity')
 
     { language: 'ruby' }.to_json
   end
 
   get '/api/chair/low_priced' do
     sql = "SELECT * FROM chair WHERE stock > 0 ORDER BY price ASC, id ASC LIMIT #{LIMIT}" # XXX:
-    chairs = db.query(sql).to_a
+    chairs = chair_db.query(sql).to_a
     { chairs: chairs }.to_json
   end
 
@@ -250,8 +286,8 @@ class App < Sinatra::Base
     limit_offset = " ORDER BY popularity_desc, id ASC LIMIT #{per_page} OFFSET #{per_page * page}" # XXX: mysql-cs-bind doesn't support escaping variables for limit and offset
     count_prefix = 'SELECT COUNT(*) as count FROM chair WHERE '
 
-    count = db.xquery("#{count_prefix}#{search_condition}", query_params).first[:count]
-    chairs = db.xquery("#{sqlprefix}#{search_condition}#{limit_offset}", query_params).to_a
+    count = chair_db.xquery("#{count_prefix}#{search_condition}", query_params).first[:count]
+    chairs = chair_db.xquery("#{sqlprefix}#{search_condition}#{limit_offset}", query_params).to_a
 
     { count: count, chairs: chairs }.to_json
   end
@@ -265,7 +301,7 @@ class App < Sinatra::Base
         halt 400
       end
 
-    chair = db.xquery('SELECT * FROM chair WHERE id = ?', id).first
+    chair = chair_db.xquery('SELECT * FROM chair WHERE id = ?', id).first
     unless chair
       logger.info "Requested id's chair not found: #{id}"
       halt 404
@@ -287,10 +323,10 @@ class App < Sinatra::Base
     end
 
     # バルクインサートできそう
-    transaction('post_api_chair') do
+    chair_transaction('post_api_chair') do
       CSV.parse(params[:chairs][:tempfile].read, skip_blanks: true) do |row|
         sql = 'INSERT INTO chair(id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock, popularity_desc) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, -1 * popularity)'
-        db.xquery(sql, *row.map(&:to_s))
+        chair_db.xquery(sql, *row.map(&:to_s))
       end
     end
 
@@ -311,13 +347,13 @@ class App < Sinatra::Base
         halt 400
       end
 
-    transaction('post_api_chair_buy') do |tx_name|
-      chair = db.xquery('SELECT * FROM chair WHERE id = ? AND stock > 0 FOR UPDATE', id).first
+    chair_transaction('post_api_chair_buy') do |tx_name|
+      chair = chair_db.xquery('SELECT * FROM chair WHERE id = ? AND stock > 0 FOR UPDATE', id).first
       unless chair
         rollback_transaction(tx_name) if in_transaction?(tx_name)
         halt 404
       end
-      db.xquery('UPDATE chair SET stock = stock - 1 WHERE id = ?', id)
+      chair_db.xquery('UPDATE chair SET stock = stock - 1 WHERE id = ?', id)
     end
 
     status 200
@@ -550,7 +586,7 @@ class App < Sinatra::Base
         halt 400
       end
 
-    chair = db.xquery('SELECT * FROM chair WHERE id = ?', id).first
+    chair = chair_db.xquery('SELECT * FROM chair WHERE id = ?', id).first
     unless chair
       logger.error "Requested id's chair not found: #{id}"
       halt 404
