@@ -111,27 +111,18 @@ class App < Sinatra::Base
       end
     end
 
-    sql = "SELECT * FROM chair"
-    chairs = db.query(sql).to_a
-    chairs.each do |chair|
-      price_range_id = case chair[:price]
-                       when 0..3000
-                         0
-                       when 3000..6000
-                         1
-                       when 6000..9000
-                         2
-                       when 9000..12000
-                         3
-                       when 12000..15000
-                         4
-                       when 15000..Float::INFINITY
-                         5
-                       end
-
-      sql = "UPDATE chair SET price_range_id = #{price_range_id} WHERE id = #{chair[:id]}"
-      db.xquery(sql)
-    end
+    sql = "UPDATE chair SET price_range_id = 0 WHERE price > 3000"
+    db.xquery(sql)
+    sql = "UPDATE chair SET price_range_id = 1 WHERE price BETWEEN 3000 AND 6000"
+    db.xquery(sql)
+    sql = "UPDATE chair SET price_range_id = 2 WHERE price BETWEEN 6000 AND 9000"
+    db.xquery(sql)
+    sql = "UPDATE chair SET price_range_id = 3 WHERE price BETWEEN 9000 AND 12000"
+    db.xquery(sql)
+    sql = "UPDATE chair SET price_range_id = 4 WHERE price BETWEEN 12000 AND 15000"
+    db.xquery(sql)
+    sql = "UPDATE chair SET price_range_id = 5 WHERE price < 15000"
+    db.xquery(sql)
 
     { language: 'ruby' }.to_json
   end
