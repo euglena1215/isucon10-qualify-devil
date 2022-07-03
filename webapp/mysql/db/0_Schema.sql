@@ -37,4 +37,4 @@ CREATE TABLE isuumo.chair
     stock       INTEGER         NOT NULL
 );
 
-alter table isuumo.estate add index (door_width, door_height, rent, popularity);
+alter table isuumo.chair add index (stock);
