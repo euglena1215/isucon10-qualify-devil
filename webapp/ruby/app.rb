@@ -550,13 +550,13 @@ class App < Sinatra::Base
     h = chair[:height]
     d = chair[:depth]
 
-    width, height = [w, h, d].min(2) # 最小の2辺を取る
+    a, b = [w, h, d].min(2) # 最小の2辺を取る
 
     # sql = "SELECT * FROM estate WHERE (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) ORDER BY popularity DESC, id ASC LIMIT #{LIMIT}" # XXX:
     # estates = db.xquery(sql, w, h, w, d, h, w, h, d, d, w, d, h).to_a
 
     sql = "SELECT * FROM estate WHERE (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) ORDER BY popularity DESC, id ASC LIMIT #{LIMIT}" # XXX:
-    estates = db.xquery(sql, width, height, height, width).to_a
+    estates = db.xquery(sql, a, b, b, a).to_a
 
     { estates: estates.map { |e| camelize_keys_for_estate(e) } }.to_json
   end
