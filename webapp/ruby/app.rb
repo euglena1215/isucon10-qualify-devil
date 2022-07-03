@@ -546,9 +546,9 @@ class App < Sinatra::Base
       halt 404
     end
 
-    w = chair[:width]
-    h = chair[:height]
-    d = chair[:depth]
+    w = chair[:width].to_i
+    h = chair[:height].to_i
+    d = chair[:depth].to_i
 
     a, b = [w, h, d].min(2) # 最小の2辺を取る
 
