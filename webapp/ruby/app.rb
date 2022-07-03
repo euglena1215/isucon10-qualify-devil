@@ -124,6 +124,9 @@ class App < Sinatra::Base
     sql = "UPDATE chair SET price_range_id = 5 WHERE price < 15000"
     db.xquery(sql)
 
+    db.xquery('UPDATE estate SET popularity_desc = -1 * popularity')
+    db.xquery('UPDATE chair SET popularity_desc = -1 * popularity')
+
     { language: 'ruby' }.to_json
   end
 
@@ -244,7 +247,7 @@ class App < Sinatra::Base
 
     sqlprefix = 'SELECT * FROM chair WHERE '
     search_condition = search_queries.join(' AND ')
-    limit_offset = " ORDER BY popularity DESC, id ASC LIMIT #{per_page} OFFSET #{per_page * page}" # XXX: mysql-cs-bind doesn't support escaping variables for limit and offset
+    limit_offset = " ORDER BY popularity_desc, id ASC LIMIT #{per_page} OFFSET #{per_page * page}" # XXX: mysql-cs-bind doesn't support escaping variables for limit and offset
     count_prefix = 'SELECT COUNT(*) as count FROM chair WHERE '
 
     count = db.xquery("#{count_prefix}#{search_condition}", query_params).first[:count]
@@ -286,7 +289,7 @@ class App < Sinatra::Base
     # バルクインサートできそう
     transaction('post_api_chair') do
       CSV.parse(params[:chairs][:tempfile].read, skip_blanks: true) do |row|
-        sql = 'INSERT INTO chair(id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        sql = 'INSERT INTO chair(id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock, popularity_desc) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, -1 * popularity)'
         db.xquery(sql, *row.map(&:to_s))
       end
     end
@@ -418,7 +421,7 @@ class App < Sinatra::Base
 
     sqlprefix = 'SELECT * FROM estate WHERE '
     search_condition = search_queries.join(' AND ')
-    limit_offset = " ORDER BY popularity DESC LIMIT #{per_page} OFFSET #{per_page * page}" # XXX:
+    limit_offset = " ORDER BY popularity_desc LIMIT #{per_page} OFFSET #{per_page * page}" # XXX:
     count_prefix = 'SELECT COUNT(*) as count FROM estate WHERE '
 
     count = db.xquery("#{count_prefix}#{search_condition}", query_params).first[:count]
@@ -453,7 +456,7 @@ class App < Sinatra::Base
       },
     }
 
-    sql = 'SELECT * FROM estate WHERE latitude <= ? AND latitude >= ? AND longitude <= ? AND longitude >= ? ORDER BY popularity DESC, id ASC'
+    sql = 'SELECT * FROM estate WHERE latitude <= ? AND latitude >= ? AND longitude <= ? AND longitude >= ? ORDER BY popularity_desc, id ASC'
     estates = db.xquery(sql, bounding_box[:bottom_right][:latitude], bounding_box[:top_left][:latitude], bounding_box[:bottom_right][:longitude], bounding_box[:top_left][:longitude])
 
     estates_in_polygon = []
@@ -501,8 +504,10 @@ class App < Sinatra::Base
     # バルクインサートできるかも
     transaction('post_api_estate') do
       CSV.parse(params[:estates][:tempfile].read, skip_blanks: true) do |row|
-        sql = 'INSERT INTO estate(id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        db.xquery(sql, *row.map(&:to_s))
+        popularity_desc = -1 * row.last.to_i
+
+        sql = 'INSERT INTO estate(id, name, description, thumbnail, address, latitude, longitude, rent, door_height, door_width, features, popularity, popularity_desc) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        db.xquery(sql, *row.map(&:to_s), popularity_desc.to_s)
       end
     end
 
@@ -557,7 +562,7 @@ class App < Sinatra::Base
 
     a, b = [w, h, d].min(2) # 最小の2辺を取る
 
-    sql = "SELECT * FROM estate WHERE (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) ORDER BY popularity DESC LIMIT #{LIMIT}" # XXX:
+    sql = "SELECT * FROM estate WHERE (door_width >= ? AND door_height >= ?) OR (door_width >= ? AND door_height >= ?) ORDER BY popularity_desc LIMIT #{LIMIT}" # XXX:
     estates = db.xquery(sql, a, b, b, a).to_a
 
     { estates: estates.map { |e| camelize_keys_for_estate(e) } }.to_json
