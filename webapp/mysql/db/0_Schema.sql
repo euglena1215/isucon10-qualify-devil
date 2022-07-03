@@ -39,5 +39,7 @@ CREATE TABLE isuumo.chair
     kind        VARCHAR(64)     NOT NULL,
     popularity  INTEGER         NOT NULL,
     stock       INTEGER         NOT NULL,
-    INDEX idx_price (price ASC, id ASC)
+    price_range_id INTEGER,
+    INDEX idx_price (price ASC, id ASC), -- いらないかも
+    INDEX price_range_id (price_range_id ASC)
 );

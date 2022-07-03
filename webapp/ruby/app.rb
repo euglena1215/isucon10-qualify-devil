@@ -111,6 +111,28 @@ class App < Sinatra::Base
       end
     end
 
+    sql = "SELECT * FROM chair"
+    chairs = db.query(sql).to_a
+    chairs.each do |chair|
+      price_range_id = case chair[:price]
+                       when 0..3000
+                         0
+                       when 3000..6000
+                         1
+                       when 6000..9000
+                         2
+                       when 9000..12000
+                         3
+                       when 12000..15000
+                         4
+                       when 15000..Float::INFINITY
+                         5
+                       end
+
+      sql = "UPDATE chair SET price_range_id = #{price_range_id} WHERE id = #{chair[:id]}"
+      db.xquery(sql)
+    end
+
     { language: 'ruby' }.to_json
   end
 
@@ -131,15 +153,8 @@ class App < Sinatra::Base
         halt 400
       end
 
-      if chair_price[:min] != -1
-        search_queries << 'price >= ?'
-        query_params << chair_price[:min]
-      end
-
-      if chair_price[:max] != -1
-        search_queries << 'price < ?'
-        query_params << chair_price[:max]
-      end
+      search_queries << 'price_range_id = ?'
+      query_params << params[:priceRangeId]
     end
 
     if params[:heightRangeId] && params[:heightRangeId].size > 0
