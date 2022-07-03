@@ -111,6 +111,13 @@ class App < Sinatra::Base
       end
     end
 
+
+    sql = "SELECT * FROM estate"
+    estates = db.xquery(sql).to_a
+    estates.each do |e|
+      db.xquery('UPDATE estate SET popularity_desc = -1 * popularity WHERE id = ?', e[:id])
+    end
+
     { language: 'ruby' }.to_json
   end
 
@@ -280,8 +287,8 @@ class App < Sinatra::Base
     # バルクインサートできそう
     transaction('post_api_chair') do
       CSV.parse(params[:chairs][:tempfile].read, skip_blanks: true) do |row|
-        sql = 'INSERT INTO chair(id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-        db.xquery(sql, *row.map(&:to_s))
+        sql = 'INSERT INTO chair(id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock, popularity_desc) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        db.xquery(sql, *row.map(&:to_s), -1 * row[:popularity].to_i)
       end
     end
 
