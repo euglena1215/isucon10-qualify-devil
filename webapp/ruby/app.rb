@@ -146,6 +146,14 @@ class App < Sinatra::Base
     db.xquery(sql)
 
     # depth_range_id
+    sql = "UPDATE chair SET depth_range_id = 0 WHERE depth < 80"
+    db.xquery(sql)
+    sql = "UPDATE chair SET depth_range_id = 1 WHERE depth BETWEEN 80 AND 110"
+    db.xquery(sql)
+    sql = "UPDATE chair SET depth_range_id = 2 WHERE depth BETWEEN 110 AND 150"
+    db.xquery(sql)
+    sql = "UPDATE chair SET depth_range_id = 3 WHERE depth > 150"
+    db.xquery(sql)
 
     db.xquery('UPDATE estate SET popularity_desc = -1 * popularity')
     db.xquery('UPDATE chair SET popularity_desc = -1 * popularity')
@@ -171,7 +179,7 @@ class App < Sinatra::Base
       end
 
       search_queries << 'price_range_id = ?'
-      query_params << params[:priceRangeId]
+      query_params << params[:priceRangeId].to_i
     end
 
     if params[:heightRangeId] && params[:heightRangeId].size > 0
@@ -182,7 +190,7 @@ class App < Sinatra::Base
       end
 
       search_queries << 'height_range_id = ?'
-      query_params << params[:heightRangeId]
+      query_params << params[:heightRangeId].to_i
     end
 
     if params[:widthRangeId] && params[:widthRangeId].size > 0
@@ -193,7 +201,7 @@ class App < Sinatra::Base
       end
 
       search_queries << 'width_range_id = ?'
-      query_params << params[:widthRangeId]
+      query_params << params[:widthRangeId].to_i
     end
 
     if params[:depthRangeId] && params[:depthRangeId].size > 0
@@ -203,15 +211,8 @@ class App < Sinatra::Base
         halt 400
       end
 
-      if chair_depth[:min] != -1
-        search_queries << 'depth >= ?'
-        query_params << chair_depth[:min]
-      end
-
-      if chair_depth[:max] != -1
-        search_queries << 'depth < ?'
-        query_params << chair_depth[:max]
-      end
+      search_queries << 'depth_range_id = ?'
+      query_params << params[:depthRangeId].to_i
     end
 
     if params[:kind] && params[:kind].size > 0
