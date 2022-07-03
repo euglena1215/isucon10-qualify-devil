@@ -67,28 +67,28 @@ class App < Sinatra::Base
 
     def transaction(name)
       d = db
-      begin_transaction(name, db)
+      begin_transaction(name, d)
       yield(name)
-      commit_transaction(name, db)
+      commit_transaction(name, d)
     rescue Exception => e
       logger.error "Failed to commit tx: #{e.inspect}"
-      rollback_transaction(name, db)
+      rollback_transaction(name, d)
       raise
     ensure
-      ensure_to_abort_transaction(name, db)
+      ensure_to_abort_transaction(name, d)
     end
 
     def chair_transaction(name)
       d = chair_db
-      begin_transaction(name, db)
+      begin_transaction(name, d)
       yield(name)
-      commit_transaction(name, db)
+      commit_transaction(name, d)
     rescue Exception => e
       logger.error "Failed to commit tx: #{e.inspect}"
-      rollback_transaction(name, db)
+      rollback_transaction(name, d)
       raise
     ensure
-      ensure_to_abort_transaction(name, db)
+      ensure_to_abort_transaction(name, d)
     end
 
     def begin_transaction(name, db)
