@@ -111,8 +111,8 @@ class App < Sinatra::Base
       end
     end
 
-
     db.xquery('UPDATE estate SET popularity_desc = -1 * popularity')
+    db.xquery('UPDATE chair SET popularity_desc = -1 * popularity')
 
     { language: 'ruby' }.to_json
   end
@@ -241,7 +241,7 @@ class App < Sinatra::Base
 
     sqlprefix = 'SELECT * FROM chair WHERE '
     search_condition = search_queries.join(' AND ')
-    limit_offset = " ORDER BY popularity DESC, id ASC LIMIT #{per_page} OFFSET #{per_page * page}" # XXX: mysql-cs-bind doesn't support escaping variables for limit and offset
+    limit_offset = " ORDER BY popularity_desc, id ASC LIMIT #{per_page} OFFSET #{per_page * page}" # XXX: mysql-cs-bind doesn't support escaping variables for limit and offset
     count_prefix = 'SELECT COUNT(*) as count FROM chair WHERE '
 
     count = db.xquery("#{count_prefix}#{search_condition}", query_params).first[:count]
@@ -283,7 +283,9 @@ class App < Sinatra::Base
     # バルクインサートできそう
     transaction('post_api_chair') do
       CSV.parse(params[:chairs][:tempfile].read, skip_blanks: true) do |row|
-        sql = 'INSERT INTO chair(id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        popularity_desc = -1 * row[11].to_i
+
+        sql = 'INSERT INTO chair(id, name, description, thumbnail, price, height, width, depth, color, features, kind, popularity, stock, popularity_desc) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
         db.xquery(sql, *row.map(&:to_s))
       end
     end

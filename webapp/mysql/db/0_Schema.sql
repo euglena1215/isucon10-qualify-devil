@@ -40,6 +40,7 @@ CREATE TABLE isuumo.chair
     features    VARCHAR(64)     NOT NULL,
     kind        VARCHAR(64)     NOT NULL,
     popularity  INTEGER         NOT NULL,
+    popularity_desc INTEGER,
     stock       INTEGER         NOT NULL,
     INDEX idx_price (price ASC, id ASC)
 );
