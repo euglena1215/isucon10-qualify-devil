@@ -38,3 +38,4 @@ CREATE TABLE isuumo.chair
 );
 
 alter table isuumo.chair add index (stock);
+alter table isuumo.estate add index (door_width, door_height, rent, popularity);
